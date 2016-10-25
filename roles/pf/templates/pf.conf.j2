@@ -27,3 +27,16 @@ pass in on { octe1, octe2 } proto tcp to self port 53
 
 # Allow octe2 to access SSH
 pass in on octe2 proto tcp to self port 22
+
+# IPv6 rules
+pass out on { octe0, octe1, octe2 } inet6 proto icmp6 all icmp6-type echoreq keep state
+pass out on { octe0, octe1, octe2 } inet6 proto icmp6 all icmp6-type {neighbradv, neighbrsol}
+
+# ND advertisement in
+pass in on octe0 inet6 proto icmp6 all icmp6-type {neighbradv, neighbrsol}
+
+# Router advertisement out
+pass out on { octe0, octe1, octe2 } inet6 proto icmp6 all icmp6-type routeradv
+
+# Router solicitation in
+pass in on octe0 inet6 proto icmp6 all icmp6-type routersol

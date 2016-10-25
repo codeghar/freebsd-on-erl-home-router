@@ -1,7 +1,7 @@
 ---
-- name: set ipv6_activate_all_interfaces
-  shell: sysrc ipv6_activate_all_interfaces="YES"
-  become: yes
+# - name: set ipv6_activate_all_interfaces
+#   shell: sysrc ipv6_activate_all_interfaces="YES"
+#   become: yes
 
 - name: set rtsold_enable
   shell: sysrc rtsold_enable="YES"
@@ -9,6 +9,10 @@
 
 - name: set ifconfig_octe0
   shell: sysrc ifconfig_octe0="DHCP"
+  become: yes
+
+- name: set ipv6_cpe_wanif
+  shell: sysrc ipv6_cpe_wanif="octe0"
   become: yes
 
 - name: set ifconfig_octe0_ipv6
@@ -45,6 +49,32 @@
 
 - name: set ipv6_gateway_enable
   shell: sysrc ipv6_gateway_enable="YES"
+  become: yes
+
+- name: set rtadvd_enable
+  shell: sysrc rtadvd_enable="YES"
+  become: yes
+
+- name: set rtadvd_interfaces
+  shell: sysrc rtadvd_interfaces="octe1 octe2"
+  become: yes
+
+- name: install dhcp6
+  pkgng: name=dhcp6 state=present
+  become: yes
+
+- name: set dhcp6c_enable
+  shell: sysrc dhcp6c_enable="YES"
+  become: yes
+
+- name: set dhcp6c_interfaces
+  shell: sysrc dhcp6c_interfaces="octe0"
+  become: yes
+
+- name: copy dhcpd6c conf
+  template:
+    src: dhcpd6c.conf.j2
+    dest: /usr/local/etc/dhcpd6c.conf
   become: yes
 
 - name: restart network
