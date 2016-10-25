@@ -1,0 +1,29 @@
+# Allow anything on loopback
+set skip on lo0
+
+# Scrub all incoming traffic
+scrub in
+
+# NAT outgoing traffic
+nat on octe0 inet from { octe1:network, octe2:network } to any -> (octe0:0)
+
+# Reject anything with spoofed addresses
+antispoof quick for { octe1, octe2, lo0 } inet
+
+# Default to blocking incoming traffic but allowing outgoing traffic
+block all
+pass out all
+
+# Allow LAN to access the rest of the world
+pass in on { octe1, octe2 } from any to any
+block in on { octe1, octe2 } from any to self
+
+# Allow LAN to ping us
+pass in on { octe1, octe2 } inet proto icmp to self icmp-type echoreq
+
+# Allow LAN to access DNS, DHCP, and NTP
+pass in on { octe1, octe2 } proto udp to self port { 53, 67, 123 }
+pass in on { octe1, octe2 } proto tcp to self port 53
+
+# Allow octe2 to access SSH
+pass in on octe2 proto tcp to self port 22

@@ -1,0 +1,37 @@
+---
+- name: copy pf rules
+  template:
+    src: pf.conf.j2
+    dest: /etc/pf.conf
+  become: yes
+
+- name: enable pf
+  shell: sysrc pf_enable="YES"
+  become: yes
+
+- name: set pf rules path
+  shell: sysrc pf_rules="/etc/pf.conf"
+  become: yes
+
+- name: set pf flags
+  shell: sysrc pf_flags=""
+  become: yes
+
+- name: enable pf log
+  shell: sysrc pflog_enable="YES"
+  become: yes
+
+- name: set pf log path
+  shell: sysrc pflog_logfile="/var/log/pflog"
+  become: yes
+
+- name: set pf log flags
+  shell: sysrc pflog_flags=""
+  become: yes
+
+- name: restart pf
+  shell: service pf restart
+  async: 1
+  poll: 0
+  ignore_errors: false
+  become: yes

@@ -1,0 +1,6 @@
+---
+- name: copy start_if.octe0
+  template:
+    src: start_if.octe0.j2
+    dest: /etc/start_if.octe0
+  become: yes

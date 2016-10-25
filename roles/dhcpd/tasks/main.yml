@@ -1,0 +1,25 @@
+---
+- name: install isc-dhcp43 from ports
+  pkgng: name=isc-dhcp43-server state=present
+  become: yes
+
+- name: copy dhcpd conf
+  template:
+    src: dhcpd.conf.j2
+    dest: /usr/local/etc/dhcpd.conf
+  become: yes
+
+- name: set dhcpd_enable
+  shell: sysrc dhcpd_enable="YES"
+  become: yes
+
+- name: set dhcpd_ifaces
+  shell: sysrc dhcpd_ifaces="octe1 octe2"
+  become: yes
+
+- name: restart isc-dhcpd
+  shell: service isc-dhcpd restart
+  async: 1
+  poll: 0
+  ignore_errors: false
+  become: yes

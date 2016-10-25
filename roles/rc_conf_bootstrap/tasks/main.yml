@@ -1,0 +1,36 @@
+---
+- name: set hostname
+  shell: sysrc hostname="{{ hostname }}"
+  become: yes
+
+- name: set growfs_enable
+  shell: sysrc growfs_enable="YES"
+  become: yes
+
+- name: set tmpfs
+  shell: sysrc tmpfs="YES"
+  become: yes
+
+- name: set tmpsize
+  shell: sysrc tmpsize="50M"
+  become: yes
+
+- name: set sendmail_enable
+  shell: sysrc sendmail_enable="NONE"
+  become: yes
+
+- name: set sshd_enable
+  shell: sysrc sshd_enable="YES"
+  become: yes
+
+- name: set ntpd_enable
+  shell: sysrc ntpd_enable="YES"
+  become: yes
+
+- name: set ntpd_sync_on_start
+  shell: sysrc ntpd_sync_on_start="YES"
+  become: yes
+
+- name: set svscan_enable
+  shell: sysrc svscan_enable="YES"
+  become: yes

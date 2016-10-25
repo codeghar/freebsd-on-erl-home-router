@@ -1,0 +1,55 @@
+---
+- name: set ipv6_activate_all_interfaces
+  shell: sysrc ipv6_activate_all_interfaces="YES"
+  become: yes
+
+- name: set rtsold_enable
+  shell: sysrc rtsold_enable="YES"
+  become: yes
+
+- name: set ifconfig_octe0
+  shell: sysrc ifconfig_octe0="DHCP"
+  become: yes
+
+- name: set ifconfig_octe0_ipv6
+  shell: sysrc ifconfig_octe0_ipv6="inet6 accept_rtadv"
+  become: yes
+
+- name: set ifconfig_octe1
+  shell: sysrc ifconfig_octe1="{{ octe1_ip }} netmask 255.255.255.0"
+  become: yes
+
+- name: set ifconfig_octe1_ipv6
+  shell: sysrc ifconfig_octe2="{{ octe2_ip }} netmask 255.255.255.0"
+  become: yes
+
+- name: set ifconfig_octe2_ipv6
+  shell: sysrc ifconfig_octe2_ipv6="inet6"
+  become: yes
+
+- name: set ipv6_privacy
+  shell: sysrc ipv6_privacy="YES"
+  become: yes
+
+- name: set ip6addrctl_enable
+  shell: sysrc ip6addrctl_enable="YES"
+  become: yes
+
+- name: set ip6addrctl_policy
+  shell: sysrc ip6addrctl_policy="AUTO"
+  become: yes
+
+- name: set gateway_enable
+  shell: sysrc gateway_enable="YES"
+  become: yes
+
+- name: set ipv6_gateway_enable
+  shell: sysrc ipv6_gateway_enable="YES"
+  become: yes
+
+- name: restart network
+  shell: service netif restart
+  async: 1
+  poll: 0
+  ignore_errors: true
+  become: yes

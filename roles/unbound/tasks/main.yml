@@ -1,0 +1,21 @@
+---
+- name: install unbound from ports
+  pkgng: name=unbound state=present
+  become: yes
+
+- name: copy unbound conf
+  template:
+    src: unbound.conf.j2
+    dest: /usr/local/etc/unbound/unbound.conf
+  become: yes
+
+- name: set unbound_enable
+  shell: sysrc unbound_enable="YES"
+  become: yes
+
+- name: start unbound
+  shell: service unbound start
+  async: 1
+  poll: 0
+  ignore_errors: false
+  become: yes

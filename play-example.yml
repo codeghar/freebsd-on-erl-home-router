@@ -1,0 +1,42 @@
+---
+- hosts: erl
+  roles:
+    - role: rc_conf_bootstrap
+    - role: mac_address_override
+    - role: network
+    - role: pf
+    - role: unbound
+      interfaces:
+        - "127.0.0.1"
+        - "::1"
+        - "{{ octe1_ip }}"
+        - "{{ octe2_ip }}"
+    - role: dhcpd
+  vars:
+    hostname: "erl"
+    domain: "home.lan"
+    octe0_override_mac: "be:ef:be:ef:00:00"
+    octe0_original_mac: "be:ef:be:ef:be:ef"
+    octe1_ip: "192.168.1.1"
+    octe2_ip: "192.168.2.1"
+    dns_forwarders:
+      - ipaddr: "23.226.230.72"
+        org: "OpenDNS"
+      - ipaddr: "8.8.4.4"
+        org: "Google"
+      - ipaddr: "37.235.1.174"
+        org: "FreeDNS"
+      - ipaddr: "8.8.8.8"
+        org: "Google"
+    dns_forwarders_ipv6:
+      - ipaddr: "2604:180:1:22a::8c53"
+        org: "OpenDNS"
+      - ipaddr: "2600:3c02::f03c:91ff:fe84"
+        org: "OpenDNS"
+    dns_records:
+      - hostname: "device1"
+        ipv4addr: "192.168.1.55"
+        macaddr: "00:00:00:00:be:ef"
+      - hostname: "device2"
+        macaddr: "00:00:00:01:be:ef"
+        ipv4addr: "192.168.1.97"
