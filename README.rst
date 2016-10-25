@@ -10,7 +10,7 @@ of FreeBSD on Ubiquiti EdgeRouter Lite (ERL), assuming these:
 * Ansible is installed on your local machine.
 * On ERL:
 
-  * You used `freebsd-ERL-build <https://github.com/cperciva/freebsd-ERL-build>`_ to build OS image installed on ERL.
+  * You used `freebsd-ERL-build <https://github.com/cperciva/freebsd-ERL-build>`_ to build OS image installed on ERL. You can use `freebsd-edgerouterlite-ansible <https://github.com/hamzasheikh/freebsd-edgerouterlite-ansible>`_ to spin up a Vagrant environment to build the OS image.
   * *root* user has no password set.
   * A user called *ubnt* exists.
   * Network and remote access through SSH on eth2 (octe2) is working.
