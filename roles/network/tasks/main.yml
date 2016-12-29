@@ -11,24 +11,32 @@
   shell: sysrc ifconfig_octe0="DHCP"
   become: yes
 
+- name: set ipv6_gateway_enable
+  shell: sysrc ipv6_gateway_enable="YES"
+  become: yes
+
 - name: set ipv6_cpe_wanif
   shell: sysrc ipv6_cpe_wanif="octe0"
   become: yes
 
 - name: set ifconfig_octe0_ipv6
-  shell: sysrc ifconfig_octe0_ipv6="inet6 accept_rtadv"
+  shell: sysrc ifconfig_octe0_ipv6="inet6 -ifdisabled accept_rtadv"
+  become: yes
+
+- name: set ifconfig_octe1_ipv6
+  shell: sysrc ifconfig_octe1_ipv6="inet6 -ifdisabled auto_linklocal"
   become: yes
 
 - name: set ifconfig_octe1
   shell: sysrc ifconfig_octe1="{{ octe1_ip }} netmask 255.255.255.0"
   become: yes
 
-- name: set ifconfig_octe1_ipv6
+- name: set ifconfig_octe2
   shell: sysrc ifconfig_octe2="{{ octe2_ip }} netmask 255.255.255.0"
   become: yes
 
 - name: set ifconfig_octe2_ipv6
-  shell: sysrc ifconfig_octe2_ipv6="inet6"
+  shell: sysrc ifconfig_octe2_ipv6="inet6 -ifdisabled auto_linklocal"
   become: yes
 
 - name: set ipv6_privacy
@@ -47,18 +55,6 @@
   shell: sysrc gateway_enable="YES"
   become: yes
 
-- name: set ipv6_gateway_enable
-  shell: sysrc ipv6_gateway_enable="YES"
-  become: yes
-
-- name: set rtadvd_enable
-  shell: sysrc rtadvd_enable="YES"
-  become: yes
-
-- name: set rtadvd_interfaces
-  shell: sysrc rtadvd_interfaces="octe1 octe2"
-  become: yes
-
 - name: install dhcp6
   pkgng: name=dhcp6 state=present
   become: yes
@@ -71,15 +67,46 @@
   shell: sysrc dhcp6c_interfaces="octe0"
   become: yes
 
-- name: copy dhcpd6c conf
-  template:
-    src: dhcpd6c.conf.j2
-    dest: /usr/local/etc/dhcpd6c.conf
+- name: set rtadvd_enable
+  shell: sysrc rtadvd_enable="YES"
   become: yes
 
-- name: restart network
-  shell: service netif restart
+- name: set rtadvd_interfaces
+  shell: sysrc rtadvd_interfaces="octe1 octe2"
+  become: yes
+
+- name: copy dhcp6c conf
+  template:
+    src: dhcp6c.conf.j2
+    dest: /usr/local/etc/dhcp6c.conf
+  become: yes
+
+- name: copy rtadvd conf
+  template:
+    src: rtadvd.conf.j2
+    dest: /etc/rtadvd.conf
+  become: yes
+
+# must be run before restarting netif
+- name: restart dhcp6c
+  shell: service dhcp6c restart
   async: 1
   poll: 0
-  ignore_errors: true
+  ignore_errors: false
   become: yes
+
+# - name: restart network
+#   shell: service netif restart
+#   async: 0
+#   poll: 0
+#   ignore_errors: true
+#   become: yes
+
+# - name: wait for network to be reachable again
+#   local_action:
+#     module: wait_for
+#       host={{ inventory_hostname }}
+#       port=22
+#       delay=15
+#       timeout=300
+#   become: false
