@@ -1,4 +1,5 @@
 interface octe0 {
+    send ia-pd 0;
     send ia-pd 1;
     send ia-na 1;
 };
@@ -6,14 +7,18 @@ interface octe0 {
 id-assoc na 1 {
 };
 
-id-assoc pd 1 {
-    prefix ::/64 3600;
+id-assoc pd 0 {
+    prefix ::/64 infinity;
     prefix-interface octe1 {
         sla-id 1;
-        sla-len 8;
+        sla-len 0;
     };
+};
+
+id-assoc pd 1 {
+    prefix ::/64 infinity;
     prefix-interface octe2 {
-        sla-id 2;
-        sla-len 8;
+        sla-id 1;
+        sla-len 0;
     };
 };

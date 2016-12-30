@@ -21,6 +21,10 @@ block in on { octe1, octe2 } from any to self
 # Allow LAN to ping us
 pass in on { octe1, octe2 } inet proto icmp to self icmp-type echoreq
 
+# Allow ping to any
+#pass in on { octe1, octe2 } inet proto icmp to any icmp-type echoreq
+#pass out on octe0 inet proto icmp to any icmp-type echoreq
+
 # Allow LAN to access DNS, DHCP, and NTP
 pass in on { octe1, octe2 } proto udp to self port { 53, 67, 123 }
 pass in on { octe1, octe2 } proto tcp to self port 53
@@ -28,15 +32,50 @@ pass in on { octe1, octe2 } proto tcp to self port 53
 # Allow octe2 to access SSH
 pass in on octe2 proto tcp to self port 22
 
+
+
+# From https://blog.pivotal.io/labs/labs/configuring-freebsd-9-1-as-an-ipv6-dhcp-client
+#icmp6_types="{ 2, 128 }" # packet too big, echo request (ping6)
+# Neighbor Discovery Protocol (NDP) (types 133-137):
+#   Router Solicitation (RS), Router Advertisement (RA)
+#   Neighbor Solicitation (NS), Neighbor Advertisement (NA)
+#   Route Redirection
+#icmp6_types_ext_if="{ 128, 133, 134, 135, 136, 137 }"
+#tcp46_services_ext_if="{ 53 }" # DNS zone transfer
+#udp6_services_ext_if="{ 53, 123, 1194, 546}" # 546 == dhcpv6-client
+
+#pass in quick on { octe0, octe1, octe2 } inet6 proto ipv6-icmp icmp6-type $icmp6_types keep state
+#pass in quick on { octe0, octe1, octe2 } inet6 proto ipv6-icmp from any to { octe0, octe1, octe2, ff02::1/16 } icmp6-type $icmp6_types_ext_if keep state
+#pass in quick on { octe0, octe1, octe2 } inet6 proto tcp from any to { octe0, octe1, octe2 } port $tcp46_services_ext_if flags S/SA keep state
+#pass in quick on { octe0, octe1, octe2 } inet6 proto udp from any to { octe0, octe1, octe2 } port $udp6_services_ext_if keep state
+
+
+
+####################
+# DHCPv6 client: make IA_PD requests and receive responses to them
+pass out quick on octe0 inet6 proto udp from octe0 to ff02::1:2 port dhcpv6-server
+pass in quick on octe0 inet6 proto udp to octe0 port dhcpv6-client
+
+# Pass all outbound IPv6 traffic
+pass out quick on octe0 inet6 from { octe0, octe1, octe2 } modulate state
+
 # IPv6 rules
 pass out on { octe0, octe1, octe2 } inet6 proto icmp6 all icmp6-type echoreq keep state
 pass out on { octe0, octe1, octe2 } inet6 proto icmp6 all icmp6-type {neighbradv, neighbrsol}
 
 # ND advertisement in
-pass in on octe0 inet6 proto icmp6 all icmp6-type {neighbradv, neighbrsol}
+pass in on { octe0, octe1, octe2 } inet6 proto icmp6 all icmp6-type {neighbradv, neighbrsol}
 
 # Router advertisement out
 pass out on { octe0, octe1, octe2 } inet6 proto icmp6 all icmp6-type routeradv
 
 # Router solicitation in
 pass in on octe0 inet6 proto icmp6 all icmp6-type routersol
+
+# RFC 4890: Recommendations for Filtering ICMPv6 Messages in Firewalls
+pass quick on { octe0, octe1, octe2 } inet6 proto icmp6 icmp6-type { 1, 2, 128, 129 }
+pass quick on { octe0, octe1, octe2 } inet6 proto icmp6 icmp6-type 3 code 0
+pass quick on { octe0, octe1, octe2 } inet6 proto icmp6 icmp6-type 3 code 1
+pass quick on { octe0, octe1, octe2 } inet6 proto icmp6 icmp6-type 4 code 0
+pass quick on { octe0, octe1, octe2 } inet6 proto icmp6 icmp6-type 4 code 1
+pass quick on { octe0, octe1, octe2 } inet6 proto icmp6 icmp6-type 4 code 2
