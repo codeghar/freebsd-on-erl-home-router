@@ -9,14 +9,14 @@ subnet 192.168.1.0 netmask 255.255.255.0 {
     range 192.168.1.21 192.168.1.254;
     option routers {{ octe1_ip }};
     option broadcast-address 192.168.1.255;
-    option domain-name-servers {{ octe1_ip }} {% for item in dns_forwarders %}, {{ item.ipaddr }}{% endfor %};
+    option domain-name-servers {{ octe1_ip }}{% for item in dns_forwarders %}, {{ item.ipaddr }}{% endfor %};
 }
 
 subnet 192.168.2.0 netmask 255.255.255.0 {
     range 192.168.2.2 192.168.2.254;
     option routers {{ octe2_ip }};
     option broadcast-address 192.168.2.255;
-    option domain-name-servers {{ octe2_ip }} {% for item in dns_forwarders %}, {{ item.ipaddr }}{% endfor %};
+    option domain-name-servers {{ octe2_ip }}{% for item in dns_forwarders %}, {{ item.ipaddr }}{% endfor %};
 }
 
 {% for item in dns_records %}
