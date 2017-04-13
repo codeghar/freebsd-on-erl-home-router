@@ -1,5 +1,47 @@
-# Allow anything on loopback
-set skip on lo0
+# Interface layout
+# octe0: WAN
+# octe1: LAN 1
+# octe1: LAN 2 (SSH access)
+# pflog0: target interface for blocked packets
+
+# Constants and variables
+
+# RFC 6890: Special-Purpose IP Address Registries:
+# https://www.iana.org/assignments/iana-ipv4-special-registry/
+# https://www.iana.org/assignments/iana-ipv6-special-registry/
+
+# Included below are all address blocks with either Forwardable = False,
+# Global = False, or both, but excluding 2001::/23 because it is often
+# superseded by more specific allocations, as of 2015-08-05.
+
+table <martians> const { \
+    0.0.0.0/8, \
+    10.0.0.0/8, \
+    100.64.0.0/10, \
+    127.0.0.0/8, \
+    169.254.0.0/16, \
+    172.16.0.0/12, \
+    192.0.0.0/24, \
+    192.0.2.0/24, \
+    192.168.0.0/16, \
+    198.18.0.0/15, \
+    198.51.100.0/24, \
+    203.0.113.0/24, \
+    240.0.0.0/4, \
+    255.255.255.255/32, \
+    ::1/128, \
+    ::/128, \
+    ::ffff:0:0/96, \
+    100::/64, \
+    2001::/32, \
+    2001:2::/48, \
+    2001:db8::/32, \
+    fc00::/7, \
+    fe80::/10 \
+}
+
+# Never touch loopback interfaces
+set skip on lo
 
 # Scrub all incoming traffic
 scrub in
@@ -7,73 +49,38 @@ scrub in
 # NAT outgoing traffic
 nat on octe0 inet from { octe1:network, octe2:network } to any -> (octe0:0)
 
-# Reject anything with spoofed addresses
-antispoof quick for { octe1, octe2, lo0 } inet
-
 # Default to blocking incoming traffic but allowing outgoing traffic
-block all
+block log
 pass out all
+
+# DHCPv6 client: make IA_PD requests and receive responses to them
+pass out quick on octe0 inet6 proto udp from octe0 to any port dhcpv6-server
+pass in quick on octe0 inet6 proto udp to octe0 port dhcpv6-client
+
+# Block undesirable traffic
+# These rules must not precede the DHCPv6 client or NAT rules above
+block log quick on octe0 from { no-route, urpf-failed, <martians> }
+block log quick on octe0 to { no-route, <martians> }
 
 # Allow LAN to access the rest of the world
 pass in on { octe1, octe2 } from any to any
 block in on { octe1, octe2 } from any to self
 
 # Allow LAN to ping us
-pass in on { octe1, octe2 } inet proto icmp to self icmp-type echoreq
-
-# Allow ping to any
-#pass in on { octe1, octe2 } inet proto icmp to any icmp-type echoreq
-#pass out on octe0 inet proto icmp to any icmp-type echoreq
+pass in on { octe1, octe2 } inet proto icmp to any icmp-type { echoreq, echorep }
 
 # Allow LAN to access DNS, DHCP, and NTP
-pass in on { octe1, octe2 } proto udp to self port { 53, 67, 123 }
-pass in on { octe1, octe2 } proto tcp to self port 53
+pass quick on { octe0, octe1, octe2 } inet proto udp from { octe1, octe2 } to any port { 53, 67, 123 }
+pass quick on { octe0, octe1, octe2 } inet6 proto udp from { octe1, octe2 } to any port { 53, 67, 123 }
 
-# Allow octe2 to access SSH
-pass in on octe2 proto tcp to self port 22
-
-
-
-# From https://blog.pivotal.io/labs/labs/configuring-freebsd-9-1-as-an-ipv6-dhcp-client
-#icmp6_types="{ 2, 128 }" # packet too big, echo request (ping6)
-# Neighbor Discovery Protocol (NDP) (types 133-137):
-#   Router Solicitation (RS), Router Advertisement (RA)
-#   Neighbor Solicitation (NS), Neighbor Advertisement (NA)
-#   Route Redirection
-#icmp6_types_ext_if="{ 128, 133, 134, 135, 136, 137 }"
-#tcp46_services_ext_if="{ 53 }" # DNS zone transfer
-#udp6_services_ext_if="{ 53, 123, 1194, 546}" # 546 == dhcpv6-client
-
-#pass in quick on { octe0, octe1, octe2 } inet6 proto ipv6-icmp icmp6-type $icmp6_types keep state
-#pass in quick on { octe0, octe1, octe2 } inet6 proto ipv6-icmp from any to { octe0, octe1, octe2, ff02::1/16 } icmp6-type $icmp6_types_ext_if keep state
-#pass in quick on { octe0, octe1, octe2 } inet6 proto tcp from any to { octe0, octe1, octe2 } port $tcp46_services_ext_if flags S/SA keep state
-#pass in quick on { octe0, octe1, octe2 } inet6 proto udp from any to { octe0, octe1, octe2 } port $udp6_services_ext_if keep state
-
-
-
-####################
-# DHCPv6 client: make IA_PD requests and receive responses to them
-pass out quick on octe0 inet6 proto udp from octe0 to ff02::1:2 port dhcpv6-server
-pass in quick on octe0 inet6 proto udp to octe0 port dhcpv6-client
+# Allow SSH to self
+pass in on { octe2 } proto { tcp, udp } to self port 22
 
 # Pass all outbound IPv6 traffic
 pass out quick on octe0 inet6 from { octe0, octe1, octe2 } modulate state
 
-# IPv6 rules
-pass out on { octe0, octe1, octe2 } inet6 proto icmp6 all icmp6-type echoreq keep state
-pass out on { octe0, octe1, octe2 } inet6 proto icmp6 all icmp6-type {neighbradv, neighbrsol}
-
-# ND advertisement in
-pass in on { octe0, octe1, octe2 } inet6 proto icmp6 all icmp6-type {neighbradv, neighbrsol}
-
-# Router advertisement out
-pass out on { octe0, octe1, octe2 } inet6 proto icmp6 all icmp6-type routeradv
-
-# Router solicitation in
-pass in on octe0 inet6 proto icmp6 all icmp6-type routersol
-
 # RFC 4890: Recommendations for Filtering ICMPv6 Messages in Firewalls
-pass quick on { octe0, octe1, octe2 } inet6 proto icmp6 icmp6-type { 1, 2, 128, 129 }
+pass quick on { octe0, octe1, octe2 } inet6 proto icmp6 icmp6-type { 1, 2, 128, 129, 133, 134, 135, 136, 137 }
 pass quick on { octe0, octe1, octe2 } inet6 proto icmp6 icmp6-type 3 code 0
 pass quick on { octe0, octe1, octe2 } inet6 proto icmp6 icmp6-type 3 code 1
 pass quick on { octe0, octe1, octe2 } inet6 proto icmp6 icmp6-type 4 code 0
