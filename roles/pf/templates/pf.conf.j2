@@ -50,7 +50,7 @@ scrub in
 nat on octe0 inet from { octe1:network, octe2:network } to any -> (octe0:0)
 
 # Default to blocking incoming traffic but allowing outgoing traffic
-block log
+block all
 pass out all
 
 # DHCPv6 client: make IA_PD requests and receive responses to them
@@ -59,8 +59,8 @@ pass in quick on octe0 inet6 proto udp to octe0 port dhcpv6-client
 
 # Block undesirable traffic
 # These rules must not precede the DHCPv6 client or NAT rules above
-block log quick on octe0 from { no-route, urpf-failed, <martians> }
-block log quick on octe0 to { no-route, <martians> }
+#block log quick on octe0 from { no-route, urpf-failed, <martians> }
+#block log quick on octe0 to { no-route, <martians> }
 
 # Allow LAN to access the rest of the world
 pass in on { octe1, octe2 } from any to any
@@ -70,7 +70,7 @@ block in on { octe1, octe2 } from any to self
 pass in on { octe1, octe2 } inet proto icmp to any icmp-type { echoreq, echorep }
 
 # Allow LAN to access DNS, DHCP, and NTP
-pass quick on { octe0, octe1, octe2 } inet proto udp from { octe1, octe2 } to any port { 53, 67, 123 }
+pass quick on { octe0, octe1, octe2 } inet proto udp from { octe1:network, octe2:network } to any port { 53, 67, 123 }
 pass quick on { octe0, octe1, octe2 } inet6 proto udp from { octe1, octe2 } to any port { 53, 67, 123 }
 
 # Allow SSH to self
