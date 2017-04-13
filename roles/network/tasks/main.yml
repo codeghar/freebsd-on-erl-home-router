@@ -4,7 +4,7 @@
 #   become: yes
 
 - name: set rtsold_enable
-  shell: sysrc rtsold_enable="YES"
+  shell: sysrc rtsold_enable="NO"
   become: yes
 
 - name: set ifconfig_octe0
