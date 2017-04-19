@@ -8,7 +8,7 @@
   become: yes
 
 - name: set ifconfig_octe0
-  shell: sysrc ifconfig_octe0="DHCP"
+  shell: sysrc ifconfig_octe0="SYNCDHCP"
   become: yes
 
 - name: set ipv6_gateway_enable
